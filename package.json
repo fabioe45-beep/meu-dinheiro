@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "homepage": "https://fabioe45-beep.github.io/meu-dinheiro",
+  "homepage": "https://fabioe45-beep.github.io/meu-dinheiro/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
