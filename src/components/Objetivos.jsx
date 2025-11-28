@@ -1,190 +1,144 @@
-import React from "react";
+import React, { useState } from "react";
 
-export default function Objetivos({
-  objetivos,
-  categorias,
-  adicionarObjetivo,
-  excluirObjetivo,
-  adicionarCategoria,
-  excluirCategoria,
-  showModal,
-  setShowModal,
-  modalType,
-  setModalType,
-}) {
-  const btnBase =
-    "rounded-full h-10 px-4 transition-all duration-300 bg-white/10 text-gray-900 hover:bg-white/30";
-  const btnPrimary =
-    "rounded-full h-10 px-4 transition-all duration-300 bg-white text-indigo-600 font-semibold shadow";
-  const btnDanger =
-    "rounded-full h-10 px-4 transition-all duration-300 bg-white/10 text-red-600 hover:bg-white/30";
+export default function Objetivos({ planejamentos = [], lancamentos = [] }) {
+  const ultimoPlanejamento = planejamentos[planejamentos.length - 1];
+  const [mes, setMes] = useState(
+    ultimoPlanejamento ? Number(ultimoPlanejamento.mes) : new Date().getMonth() + 1
+  );
+  const [ano, setAno] = useState(
+    ultimoPlanejamento ? Number(ultimoPlanejamento.ano) : new Date().getFullYear()
+  );
+
+  console.log("Planejamentos disponíveis:", planejamentos);
+  console.log("Filtro atual:", mes, ano);
+
+  const planejamentoSelecionado = (planejamentos || []).find(
+    (p) => Number(p.mes) === mes && Number(p.ano) === ano
+  );
+
+  const receitaPlanejada = planejamentoSelecionado?.receitaTotal || 0;
+  const despesasPlanejadas = planejamentoSelecionado?.despesas || [];
+
+  const lancamentosFiltrados = lancamentos.filter((l) => {
+    const dt = new Date(l.data);
+    return dt.getMonth() + 1 === mes && dt.getFullYear() === ano;
+  });
+
+  const receitaReal = lancamentosFiltrados
+    .filter((l) => l.tipo.toLowerCase() === "receita")
+    .reduce((acc, l) => acc + Number(l.valor || 0), 0);
+
+  const despesasReaisPorCategoria = despesasPlanejadas.map((d) => {
+    const planejado = d.itens?.reduce((acc, it) => acc + Number(it.valor || 0), 0);
+    const realizado = lancamentosFiltrados
+      .filter(
+        (l) =>
+          l.tipo.toLowerCase() === "despesa" &&
+          l.categoria.toLowerCase() === d.categoria.toLowerCase()
+      )
+      .reduce((acc, l) => acc + Number(l.valor || 0), 0);
+
+    return { categoria: d.categoria, planejado, realizado };
+  });
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-6 text-gray-800 w-full h-full relative overflow-visible">
-      <h2 className="text-xl font-bold text-indigo-600 mb-4">Objetivos Mensais</h2>
-
-      <div className="space-y-3">
-        {objetivos.length === 0 && (
-          <p className="text-sm text-gray-600">Nenhuma meta definida ainda.</p>
-        )}
-
-        {objetivos.map((obj, index) => (
-          <div
-            key={`${obj.categoria}-${index}`}
-            className="flex justify-between items-center border-b py-2"
+    <div className="bg-white rounded-xl shadow-md p-6 text-gray-800 w-full h-full flex flex-col overflow-y-auto">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-indigo-600">Objetivos</h2>
+        <div className="flex gap-2">
+          <select
+            value={mes}
+            onChange={(e) => setMes(Number(e.target.value))}
+            className="p-2 border rounded"
           >
-            <span>{obj.categoria}</span>
-            <div className="flex items-center gap-3">
-              <span>Meta: R$ {obj.meta}</span>
-              <button
-                onClick={() => excluirObjetivo(index)}
-                className={btnDanger}
-                title="Excluir objetivo"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        ))}
+            <option value="1">Janeiro</option>
+            <option value="2">Fevereiro</option>
+            <option value="3">Março</option>
+            <option value="4">Abril</option>
+            <option value="5">Maio</option>
+            <option value="6">Junho</option>
+            <option value="7">Julho</option>
+            <option value="8">Agosto</option>
+            <option value="9">Setembro</option>
+            <option value="10">Outubro</option>
+            <option value="11">Novembro</option>
+            <option value="12">Dezembro</option>
+          </select>
+
+          <input
+            type="number"
+            value={ano}
+            onChange={(e) => setAno(Number(e.target.value))}
+            className="p-2 border rounded w-24"
+            placeholder="Ano"
+          />
+        </div>
       </div>
 
-      {/* Botão flutuante azul gradiente com + enorme */}
-      <button
-        onClick={() => {
-          setModalType("objetivo");
-          setShowModal(true);
-        }}
-        className="absolute bottom-4 right-4 rounded-full w-14 h-14 flex items-center justify-center shadow-lg ring-1 ring-white/40 text-white text-20xl font-bold"
-        style={{
-          backgroundImage: "linear-gradient(to right, #4f46e5, #9333ea)", // gradiente azul → roxo
-          lineHeight: "1", // garante centralização vertical
-        }}
-        aria-label="Adicionar objetivo"
-        title="Adicionar objetivo"
-      >
-        +
-      </button>
+      {!planejamentoSelecionado ? (
+        <p className="text-gray-500">
+          Nenhum planejamento encontrado para {mes}/{ano}.
+        </p>
+      ) : (
+        <>
+          {/* Receitas (mantém diferença) */}
+          <div className="mb-6">
+            <h3 className="font-semibold mb-2">Receitas</h3>
+            <p>Planejado: R$ {receitaPlanejada}</p>
+            <p>Realizado: R$ {receitaReal}</p>
+            <p className="font-semibold">
+              Diferença: R$ {receitaReal - receitaPlanejada} (
+              {receitaPlanejada > 0
+                ? ((receitaReal / receitaPlanejada) * 100).toFixed(1)
+                : "0"}%)
+            </p>
 
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 text-gray-800 shadow-xl">
-            <h3 className="text-lg font-bold mb-4">
-              {modalType === "objetivo" ? "Novo Objetivo" : "Gerenciar Categorias"}
-            </h3>
-
-            {modalType === "objetivo" ? (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const categoria = e.target.categoria.value.trim();
-                  const meta = parseFloat(e.target.meta.value);
-                  if (!categoria || isNaN(meta) || meta <= 0) return;
-                  adicionarObjetivo({ categoria, meta });
-                  setShowModal(false);
+            <div className="w-full bg-gray-200 rounded h-4 mt-2">
+              <div
+                className="h-4 rounded bg-green-500 transition-all duration-500"
+                style={{
+                  width: `${Math.min(
+                    (receitaReal / receitaPlanejada) * 100,
+                    100
+                  )}%`,
                 }}
-                className="space-y-4"
-              >
-                <div>
-                  <label className="block text-sm mb-1">Categoria</label>
-                  <select name="categoria" className="w-full border rounded-lg p-2">
-                    {categorias.map((cat) => (
-                      <option key={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm mb-1">Meta (R$)</label>
-                  <input
-                    type="number"
-                    name="meta"
-                    className="w-full border rounded-lg p-2"
-                  />
-                </div>
+              ></div>
+            </div>
+          </div>
 
-                <div className="flex justify-between items-center">
-                  <button
-                    type="button"
-                    onClick={() => setModalType("categorias")}
-                    className={btnBase}
-                  >
-                    Gerenciar categorias
-                  </button>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowModal(false)}
-                      className={btnBase}
-                    >
-                      Cancelar
-                    </button>
-                    <button type="submit" className={btnPrimary}>
-                      Salvar
-                    </button>
+          {/* Despesas (usa saldo) */}
+          <div>
+            <h3 className="font-semibold mb-2">Despesas</h3>
+            {despesasReaisPorCategoria.map((d, idx) => {
+              const saldo = d.planejado - d.realizado;
+              return (
+                <div key={idx} className="mb-4 border rounded p-2">
+                  <p className="font-semibold">{d.categoria}</p>
+                  <p>Planejado: R$ {d.planejado}</p>
+                  <p>Realizado: R$ {d.realizado}</p>
+                  <p className="font-semibold">
+                    Saldo: R$ {saldo} (
+                    {d.planejado > 0
+                      ? ((d.realizado / d.planejado) * 100).toFixed(1)
+                      : "0"}%)
+                  </p>
+
+                  <div className="w-full bg-gray-200 rounded h-4 mt-2">
+                    <div
+                      className="h-4 rounded bg-red-500 transition-all duration-500"
+                      style={{
+                        width: `${Math.min(
+                          (d.realizado / d.planejado) * 100,
+                          100
+                        )}%`,
+                      }}
+                    ></div>
                   </div>
                 </div>
-              </form>
-            ) : (
-              <div className="space-y-4">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const nome = e.target.nome.value.trim();
-                    if (!nome) return;
-                    adicionarCategoria(nome);
-                    e.target.reset();
-                  }}
-                  className="flex gap-2"
-                >
-                  <input
-                    type="text"
-                    name="nome"
-                    placeholder="Nova categoria"
-                    className="flex-1 border rounded-lg p-2"
-                  />
-                  <button type="submit" className={btnPrimary}>
-                    Adicionar
-                  </button>
-                </form>
-
-                <ul className="space-y-2">
-                  {categorias.map((cat, index) => (
-                    <li
-                      key={cat}
-                      className="flex justify-between items-center border-b py-1"
-                    >
-                      <span>{cat}</span>
-                      <button
-                        onClick={() => excluirCategoria(index)}
-                        className={btnDanger}
-                        title="Excluir categoria"
-                      >
-                        ✕
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setModalType("objetivo")}
-                    className={btnBase}
-                  >
-                    Voltar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className={btnBase}
-                  >
-                    Fechar
-                  </button>
-                </div>
-              </div>
-            )}
+              );
+            })}
           </div>
-        </div>
+        </>
       )}
     </div>
   );

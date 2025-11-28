@@ -6,12 +6,16 @@ import Lancamentos from "./components/Lancamentos";
 import Formulario from "./components/Formulario";
 import Objetivos from "./components/Objetivos";
 
+import Planejamento from "./components/Planejamento";
+import NovoPlanejamento from "./components/NovoPlanejamento";
+import EditarPlanejamento from "./components/EditarPlanejamento";
+
+
 export default function App() {
   const [screen, setScreen] = useState("home");
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("objetivo");
 
-  // 🔒 Inicializa direto do localStorage
   const [categorias, setCategorias] = useState(() => {
     const saved = localStorage.getItem("categorias");
     return saved
@@ -29,7 +33,14 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // 🔒 Salvar sempre que mudar
+  const [planejamentos, setPlanejamentos] = useState(() => {
+    const saved = localStorage.getItem("planejamentos");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [planejamentoSelecionado, setPlanejamentoSelecionado] = useState(null);
+
+  // Persistência
   useEffect(() => {
     localStorage.setItem("objetivos", JSON.stringify(objetivos));
   }, [objetivos]);
@@ -41,6 +52,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("lancamentos", JSON.stringify(lancamentos));
   }, [lancamentos]);
+
+  useEffect(() => {
+    localStorage.setItem("planejamentos", JSON.stringify(planejamentos));
+  }, [planejamentos]);
 
   // Funções principais
   const adicionarObjetivo = (obj) => setObjetivos((prev) => [...prev, obj]);
@@ -64,6 +79,55 @@ export default function App() {
     }
   };
 
+  const adicionarPlanejamento = (novo) => {
+    const uid = () => Math.random().toString(36).slice(2);
+const adicionarPlanejamento = (novo) => {
+  const uid = () => Math.random().toString(36).slice(2);
+  const base = { ...novo, id: uid() };
+  setPlanejamentos((prev) => {
+    const atualizados = [...prev, base];
+    console.log("Planejamentos atualizados:", atualizados);
+    return atualizados;
+  });
+};
+    if (novo.replicarAno) {
+      // 🔎 Bloqueia se já houver qualquer mês daquele ano
+      const existeAno = planejamentos.some((p) => p.ano === novo.ano);
+      if (existeAno) {
+        alert(`Já existe planejamento para o ano ${novo.ano}.`);
+        return;
+      }
+      const todosMeses = Array.from({ length: 12 }, (_, i) => i + 1);
+      const replicados = todosMeses.map((mes) => ({
+        ...novo,
+        mes,
+        id: uid(),
+      }));
+      setPlanejamentos((prev) => [...prev, ...replicados]);
+    } else {
+      // 🔎 Bloqueia se já houver para o mesmo mês/ano
+      const existe = planejamentos.some(
+        (p) => p.mes === novo.mes && p.ano === novo.ano
+      );
+      if (existe) {
+        alert(`Já existe um planejamento para ${novo.mes}/${novo.ano}.`);
+        return;
+      }
+      const base = { ...novo, id: uid() };
+      setPlanejamentos((prev) => [...prev, base]);
+    }
+  };
+
+  const atualizarPlanejamento = (atualizado) => {
+    setPlanejamentos((prev) =>
+      prev.map((p) => (p.id === atualizado.id ? atualizado : p))
+    );
+  };
+
+  const excluirPlanejamento = (id) => {
+    setPlanejamentos((prev) => prev.filter((p) => p.id !== id));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-700 to-pink-600 text-white flex justify-center">
       <div className="w-full max-w-md flex flex-col">
@@ -71,7 +135,9 @@ export default function App() {
 
         <main className="flex-1 mt-6 p-4">
           <div className="h-[calc(100vh-160px)] overflow-y-auto space-y-6">
-            {screen === "home" && <Home lancamentos={lancamentos} />}
+            {screen === "home" && (
+              <Home lancamentos={lancamentos} setScreen={setScreen} />
+            )}
             {screen === "lancamentos" && (
               <Lancamentos
                 lancamentos={lancamentos}
@@ -84,18 +150,38 @@ export default function App() {
                 adicionarLancamento={adicionarLancamento}
               />
             )}
-            {screen === "objetivos" && (
-              <Objetivos
-                objetivos={objetivos}
+          {screen === "objetivos" && (
+  <Objetivos
+    planejamentos={planejamentos}   // ✅ ajuste: passa os planejamentos
+    lancamentos={lancamentos}       // ✅ ajuste: passa os lançamentos
+  />
+)}
+            {screen === "orcamento" && (
+              <Orcamento lancamentos={lancamentos} />
+            )}
+            {screen === "planejamento" && (
+              <Planejamento
+                planejamentos={planejamentos}
+                setScreen={setScreen}
+                setPlanejamentoSelecionado={setPlanejamentoSelecionado}
+                excluirPlanejamento={excluirPlanejamento}
+              />
+            )}
+           {screen === "novoPlanejamento" && (
+  <NovoPlanejamento
+    adicionarPlanejamento={adicionarPlanejamento}
+    setScreen={setScreen}
+    categorias={categorias}
+    adicionarCategoria={adicionarCategoria} // ✅ passe a função do App
+  />
+)}
+
+            {screen === "editarPlanejamento" && planejamentoSelecionado && (
+              <EditarPlanejamento
+                planejamento={planejamentoSelecionado}
+                atualizarPlanejamento={atualizarPlanejamento}
+                setScreen={setScreen}
                 categorias={categorias}
-                adicionarObjetivo={adicionarObjetivo}
-                excluirObjetivo={excluirObjetivo}
-                adicionarCategoria={adicionarCategoria}
-                excluirCategoria={excluirCategoria}
-                showModal={showModal}
-                setShowModal={setShowModal}
-                modalType={modalType}
-                setModalType={setModalType}
               />
             )}
           </div>
