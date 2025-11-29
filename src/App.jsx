@@ -12,7 +12,6 @@ import EditarPlanejamento from "./components/EditarPlanejamento";
 export default function App() {
   const [screen, setScreen] = useState("home");
 
-  // categorias separadas
   const [categoriasReceita, setCategoriasReceita] = useState(() => {
     const saved = localStorage.getItem("categoriasReceita");
     return saved ? JSON.parse(saved) : ["Salário", "Investimentos"];
@@ -40,7 +39,6 @@ export default function App() {
 
   const [planejamentoSelecionado, setPlanejamentoSelecionado] = useState(null);
 
-  // Persistência
   useEffect(() => {
     localStorage.setItem("categoriasReceita", JSON.stringify(categoriasReceita));
   }, [categoriasReceita]);
@@ -61,7 +59,6 @@ export default function App() {
     localStorage.setItem("planejamentos", JSON.stringify(planejamentos));
   }, [planejamentos]);
 
-  // Funções principais
   const adicionarCategoria = (nova, tipo) => {
     if (tipo === "receita") {
       if (nova && !categoriasReceita.includes(nova)) {
@@ -75,7 +72,7 @@ export default function App() {
   };
 
   const adicionarLancamento = (novo) => {
-    adicionarCategoria(novo.categoria, novo.tipo); // garante que nova categoria seja salva no tipo correto
+    adicionarCategoria(novo.categoria, novo.tipo);
     setLancamentos((prev) => [...prev, novo]);
   };
 
@@ -125,15 +122,16 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-700 to-pink-600 text-white flex justify-center">
-      <div className="w-full max-w-md flex flex-col">
-        <Header />
+    <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-700 to-pink-600 text-white flex flex-col">
+      <Header />
 
-        <main className="flex-1 mt-6 p-4">
-          <div className="h-[calc(100vh-160px)] overflow-y-auto space-y-6">
-            {screen === "home" && (
-              <Home lancamentos={lancamentos} setScreen={setScreen} />
-            )}
+      <main className="flex-1 flex flex-col justify-center items-center p-4 w-full max-w-md mx-auto">
+        {screen === "home" && (
+          <Home lancamentos={lancamentos} setScreen={setScreen} />
+        )}
+
+        {screen !== "home" && (
+          <div className="bg-white rounded-xl shadow-md p-4 text-gray-800 w-full h-[calc(100vh-180px)] overflow-y-auto">
             {screen === "lancamentos" && (
               <Lancamentos
                 lancamentos={lancamentos}
@@ -182,10 +180,10 @@ export default function App() {
               />
             )}
           </div>
-        </main>
+        )}
+      </main>
 
-        <Navigation screen={screen} setScreen={setScreen} />
-      </div>
+      <Navigation screen={screen} setScreen={setScreen} />
     </div>
   );
 }
