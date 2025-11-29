@@ -154,7 +154,7 @@ export default function NovoPlanejamento({
           ))}
           <button
             onClick={adicionarReceita}
-            className="mt-2 bg-green-500 text-white px-3 py-1 rounded"
+            className="mt-2 bg-gradient-to-r from-green-500 to-green-300 text-white px-3 py-1 rounded"
           >
             + Receita
           </button>
@@ -182,7 +182,7 @@ export default function NovoPlanejamento({
                   </select>
                   <button
                     onClick={() => abrirModalItens(i)}
-                    className="bg-indigo-500 text-white px-3 py-1 rounded"
+                    className="bg-gradient-to-r from-indigo-500 to-indigo-400 text-white px-3 py-1 rounded"
                   >
                     + Itens
                   </button>
@@ -214,7 +214,7 @@ export default function NovoPlanejamento({
           })}
           <button
             onClick={adicionarDespesa}
-            className="mt-2 bg-red-500 text-white px-3 py-1 rounded"
+            className="mt-2 bg-gradient-to-r from-red-500 to-red-400 text-white px-3 py-1 rounded"
           >
             + Categoria de Despesa
           </button>
@@ -244,7 +244,7 @@ export default function NovoPlanejamento({
       {/* Botão salvar fixo */}
       <button
         onClick={salvar}
-        className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700"
+        className="mt-4 bg-gradient-to-r from-indigo-500 to-pink-500 text-white px-4 py-2 rounded shadow hover:bg-indigo-700"
       >
         Salvar Planejamento
       </button>
@@ -304,7 +304,7 @@ export default function NovoPlanejamento({
             <div className="flex justify-end gap-2">
               <button
                 onClick={adicionarItem}
-                className="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
+                className="bg-gradient-to-r from-indigo-500 to-indigo-400 text-white px-3 py-1 rounded hover:bg-indigo-700"
               >
                 Adicionar item
               </button>
@@ -314,7 +314,7 @@ export default function NovoPlanejamento({
                   setCategoriaSelecionada(null);
                   setNovoItem({ nome: "", valor: 0 });
                 }}
-                className="bg-gray-200 text-gray-800 px-3 py-1 rounded hover:bg-gray-300"
+                className="bg-gradient-to-r from-gray-200 to-gray-100 text-gray-800 px-3 py-1 rounded hover:bg-gray-300"
               >
                 Fechar
               </button>
