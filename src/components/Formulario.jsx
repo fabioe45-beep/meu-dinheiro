@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function Formulario({
   categoriasReceita = [],
@@ -8,28 +8,43 @@ export default function Formulario({
 }) {
   const [tipo, setTipo] = useState("receita");
   const [categoria, setCategoria] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [valor, setValor] = useState("");
+  const [data, setData] = useState("");
+  const [usarMesSeguinte, setUsarMesSeguinte] = useState(false);
+  const [repetir, setRepetir] = useState(false);
+  const [qtdRepeticoes, setQtdRepeticoes] = useState(1);
+
+  const categoriasAtuais = tipo === "receita" ? categoriasReceita : categoriasDespesa;
+
+  // Define automaticamente a primeira categoria disponível quando tipo muda ou quando lista carrega
+  useEffect(() => {
+    if (!categoria && categoriasAtuais.length > 0) {
+      setCategoria(categoriasAtuais[0]);
+    }
+  }, [tipo, categoriasAtuais]);
+
+  const podeEnviar =
+    descricao.trim() !== "" &&
+    Number(valor) > 0 &&
+    data &&
+    categoria &&
+    categoriasAtuais.length > 0;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    const descricao = e.target.descricao.value.trim();
-    const valor = parseFloat(e.target.valor.value);
-    const data = e.target.data.value;
-
-    if (!descricao || isNaN(valor) || valor <= 0 || !data || !categoria) return;
+    if (!podeEnviar) return;
 
     const dataObj = new Date(data);
-    const usarMesSeguinte = e.target.usarMesSeguinte.checked;
-    const repetir = e.target.repetir.checked;
-    const quantidadeRepeticoes = repetir ? Number(e.target.qtdRepeticoes.value) : 1;
+    const v = Number(valor);
 
     // Caso 1: nenhum flag
     if (!usarMesSeguinte && !repetir) {
       adicionarLancamento({
         tipo,
         categoria,
-        descricao,
-        valor,
+        descricao: descricao.trim(),
+        valor: v,
         data,
         dataPagamento: data,
       });
@@ -48,8 +63,8 @@ export default function Formulario({
       adicionarLancamento({
         tipo,
         categoria,
-        descricao,
-        valor,
+        descricao: descricao.trim(),
+        valor: v,
         data,
         dataPagamento,
       });
@@ -57,17 +72,7 @@ export default function Formulario({
 
     // Caso 3: só repetir
     if (!usarMesSeguinte && repetir) {
-      adicionarLancamento({
-        tipo,
-        categoria,
-        descricao,
-        valor,
-        data,
-        dataPagamento: data,
-        parcela: { atual: 1, total: quantidadeRepeticoes },
-      });
-
-      for (let i = 1; i < quantidadeRepeticoes; i++) {
+      for (let i = 0; i < qtdRepeticoes; i++) {
         const dataPagamento = new Date(
           dataObj.getFullYear(),
           dataObj.getMonth() + i,
@@ -79,39 +84,21 @@ export default function Formulario({
         adicionarLancamento({
           tipo,
           categoria,
-          descricao,
-          valor,
+          descricao: descricao.trim(),
+          valor: v,
           data,
           dataPagamento,
-          parcela: { atual: i + 1, total: quantidadeRepeticoes },
+          parcela: { atual: i + 1, total: qtdRepeticoes },
         });
       }
     }
 
     // Caso 4: mês seguinte + repetir
     if (usarMesSeguinte && repetir) {
-      const dataPagamentoInicial = new Date(
-        dataObj.getFullYear(),
-        dataObj.getMonth() + 1,
-        dataObj.getDate()
-      )
-        .toISOString()
-        .split("T")[0];
-
-      adicionarLancamento({
-        tipo,
-        categoria,
-        descricao,
-        valor,
-        data,
-        dataPagamento: dataPagamentoInicial,
-        parcela: { atual: 1, total: quantidadeRepeticoes },
-      });
-
-      for (let i = 2; i <= quantidadeRepeticoes; i++) {
+      for (let i = 0; i < qtdRepeticoes; i++) {
         const dataPagamento = new Date(
           dataObj.getFullYear(),
-          dataObj.getMonth() + i,
+          dataObj.getMonth() + 1 + i,
           dataObj.getDate()
         )
           .toISOString()
@@ -120,30 +107,31 @@ export default function Formulario({
         adicionarLancamento({
           tipo,
           categoria,
-          descricao,
-          valor,
+          descricao: descricao.trim(),
+          valor: v,
           data,
           dataPagamento,
-          parcela: { atual: i, total: quantidadeRepeticoes },
+          parcela: { atual: i + 1, total: qtdRepeticoes },
         });
       }
     }
 
-    e.target.reset();
-    setCategoria("");
+    // limpa estados
+    setDescricao("");
+    setValor("");
+    setData("");
+    setUsarMesSeguinte(false);
+    setRepetir(false);
+    setQtdRepeticoes(1);
+    // mantém categoria atual para acelerar lançamentos repetidos
   };
-
-  // Lista dinâmica de categorias
-  const categoriasAtuais = tipo === "receita" ? categoriasReceita : categoriasDespesa;
 
   const handleCategoriaChange = (e) => {
     if (e.target.value === "nova") {
       const nova = prompt("Digite o nome da nova categoria:");
       if (nova && nova.trim() !== "") {
-        adicionarCategoria(nova.trim(), tipo); // passa também o tipo
+        adicionarCategoria(nova.trim(), tipo);
         setCategoria(nova.trim());
-      } else {
-        setCategoria(categoriasAtuais[0] || "");
       }
     } else {
       setCategoria(e.target.value);
@@ -158,11 +146,10 @@ export default function Formulario({
         <div>
           <label className="block text-sm font-medium mb-1">Tipo</label>
           <select
-            name="tipo"
             value={tipo}
             onChange={(e) => {
               setTipo(e.target.value);
-              setCategoria("");
+              setCategoria(""); // força reescolha ou auto-seleção
             }}
             className="w-full border rounded-lg p-2"
           >
@@ -174,25 +161,31 @@ export default function Formulario({
         <div>
           <label className="block text-sm font-medium mb-1">Categoria</label>
           <select
-            name="categoria"
             value={categoria}
             onChange={handleCategoriaChange}
             className="w-full border rounded-lg p-2"
           >
-            {categoriasAtuais.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-            <option value="nova">+ Nova Categoria</option>
+            {categoriasAtuais.length === 0 ? (
+              <option value="">Cadastre uma categoria primeiro</option>
+            ) : (
+              <>
+                {categoriasAtuais.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+                <option value="nova">+ Nova Categoria</option>
+              </>
+            )}
           </select>
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-1">Descrição</label>
           <input
-            name="descricao"
             type="text"
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
             placeholder="Ex: Supermercado"
             className="w-full border rounded-lg p-2"
           />
@@ -201,9 +194,10 @@ export default function Formulario({
         <div>
           <label className="block text-sm font-medium mb-1">Valor</label>
           <input
-            name="valor"
             type="number"
             step="0.01"
+            value={valor}
+            onChange={(e) => setValor(e.target.value)}
             placeholder="Ex: 150.00"
             className="w-full border rounded-lg p-2"
           />
@@ -212,32 +206,46 @@ export default function Formulario({
         <div>
           <label className="block text-sm font-medium mb-1">Data</label>
           <input
-            name="data"
             type="date"
+            value={data}
+            onChange={(e) => setData(e.target.value)}
             className="w-full border rounded-lg p-2"
           />
         </div>
 
         <div className="flex items-center gap-2">
-          <input type="checkbox" name="usarMesSeguinte" />
+          <input
+            type="checkbox"
+            checked={usarMesSeguinte}
+            onChange={(e) => setUsarMesSeguinte(e.target.checked)}
+          />
           <label className="text-sm">Influenciar mês seguinte</label>
         </div>
 
         <div className="flex items-center gap-2">
-          <input type="checkbox" name="repetir" />
+          <input
+            type="checkbox"
+            checked={repetir}
+            onChange={(e) => setRepetir(e.target.checked)}
+          />
           <label className="text-sm">Repetir</label>
           <input
             type="number"
-            name="qtdRepeticoes"
             min="1"
-            defaultValue="1"
+            value={qtdRepeticoes}
+            onChange={(e) => setQtdRepeticoes(Number(e.target.value))}
             className="w-20 border rounded-lg p-1"
           />
         </div>
 
         <button
           type="submit"
-          className="w-full bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold py-2 rounded-lg shadow-md hover:scale-105 transition"
+          disabled={!podeEnviar}
+          className={`w-full text-white font-semibold py-2 rounded-lg shadow-md transition ${
+            podeEnviar
+              ? "bg-gradient-to-r from-indigo-500 to-pink-500 hover:scale-105"
+              : "bg-gray-300 cursor-not-allowed"
+          }`}
         >
           Salvar Lançamento
         </button>

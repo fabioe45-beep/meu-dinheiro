@@ -8,10 +8,12 @@ import Objetivos from "./components/Objetivos";
 import Planejamento from "./components/Planejamento";
 import NovoPlanejamento from "./components/NovoPlanejamento";
 import EditarPlanejamento from "./components/EditarPlanejamento";
+import Relatorios from "./components/Relatorios";
 
 export default function App() {
   const [screen, setScreen] = useState("home");
 
+  // categorias separadas
   const [categoriasReceita, setCategoriasReceita] = useState(() => {
     const saved = localStorage.getItem("categoriasReceita");
     return saved ? JSON.parse(saved) : ["Salário", "Investimentos"];
@@ -39,6 +41,7 @@ export default function App() {
 
   const [planejamentoSelecionado, setPlanejamentoSelecionado] = useState(null);
 
+  // Persistência
   useEffect(() => {
     localStorage.setItem("categoriasReceita", JSON.stringify(categoriasReceita));
   }, [categoriasReceita]);
@@ -59,6 +62,7 @@ export default function App() {
     localStorage.setItem("planejamentos", JSON.stringify(planejamentos));
   }, [planejamentos]);
 
+  // Funções principais
   const adicionarCategoria = (nova, tipo) => {
     if (tipo === "receita") {
       if (nova && !categoriasReceita.includes(nova)) {
@@ -125,11 +129,13 @@ export default function App() {
     <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-700 to-pink-600 text-white flex flex-col">
       <Header />
 
-      <main className="flex-1 flex flex-col justify-center items-center p-4 w-full max-w-md mx-auto">
+      <main className="flex-1 flex flex-col items-center w-full max-w-md mx-auto p-4">
+        {/* ✅ Home fora do container branco */}
         {screen === "home" && (
           <Home lancamentos={lancamentos} setScreen={setScreen} />
         )}
 
+        {/* ✅ Demais telas dentro do container branco */}
         {screen !== "home" && (
           <div className="bg-white rounded-xl shadow-md p-4 text-gray-800 w-full h-[calc(100vh-180px)] overflow-y-auto">
             {screen === "lancamentos" && (
@@ -147,10 +153,7 @@ export default function App() {
               />
             )}
             {screen === "objetivos" && (
-              <Objetivos
-                planejamentos={planejamentos}
-                lancamentos={lancamentos}
-              />
+              <Objetivos planejamentos={planejamentos} lancamentos={lancamentos} />
             )}
             {screen === "planejamento" && (
               <Planejamento
@@ -177,6 +180,15 @@ export default function App() {
                 categoriasReceita={categoriasReceita}
                 categoriasDespesa={categoriasDespesa}
                 adicionarCategoria={adicionarCategoria}
+              />
+            )}
+            {screen === "relatorios" && (
+              <Relatorios
+                lancamentos={lancamentos}
+    planejamentos={planejamentos}
+    categoriasReceita={categoriasReceita}
+    categoriasDespesa={categoriasDespesa}
+
               />
             )}
           </div>
