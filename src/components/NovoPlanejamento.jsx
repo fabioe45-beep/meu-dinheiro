@@ -3,7 +3,8 @@ import React, { useState } from "react";
 export default function NovoPlanejamento({
   adicionarPlanejamento,
   setScreen,
-  categorias,
+  categoriasReceita,
+  categoriasDespesa,
   adicionarCategoria,
 }) {
   const [mes, setMes] = useState(new Date().getMonth() + 1);
@@ -12,7 +13,6 @@ export default function NovoPlanejamento({
   const [despesas, setDespesas] = useState([]);
   const [replicarAno, setReplicarAno] = useState(false);
 
-  // Modal de itens
   const [showModal, setShowModal] = useState(false);
   const [categoriaSelecionada, setCategoriaSelecionada] = useState(null);
   const [novoItem, setNovoItem] = useState({ nome: "", valor: 0 });
@@ -23,8 +23,10 @@ export default function NovoPlanejamento({
     0
   );
 
+  const disponivel = somaReceitas - somaDespesas;
+
   const adicionarReceita = () =>
-    setReceitas([...receitas, { categoria: categorias[0] || "", valor: 0 }]);
+    setReceitas([...receitas, { categoria: categoriasReceita[0] || "", valor: 0 }]);
 
   const atualizarReceita = (index, campo, valor) => {
     const novas = [...receitas];
@@ -32,9 +34,8 @@ export default function NovoPlanejamento({
     setReceitas(novas);
   };
 
-  const adicionarDespesa = () => {
-    setDespesas([...despesas, { categoria: categorias[0] || "", itens: [] }]);
-  };
+  const adicionarDespesa = () =>
+    setDespesas([...despesas, { categoria: categoriasDespesa[0] || "", itens: [] }]);
 
   const atualizarCategoriaDespesa = (index, valor) => {
     const novas = [...despesas];
@@ -61,6 +62,7 @@ export default function NovoPlanejamento({
       ano,
       receitaTotal: somaReceitas,
       despesasTotal: somaDespesas,
+      disponivel,
       receitas,
       despesas,
       replicarAno,
@@ -68,24 +70,36 @@ export default function NovoPlanejamento({
     adicionarPlanejamento(novo);
     setScreen("planejamento");
   };
-    const handleCategoriaChange = (index, valor, tipo) => {
+
+  const handleCategoriaChange = (index, valor, tipo) => {
     if (valor === "__nova__") {
       const entrada = prompt("Digite o nome da nova categoria:");
       const nova = entrada?.trim();
       if (!nova) return;
 
-      const existe = categorias.some(
-        (c) => c.toLowerCase() === nova.toLowerCase()
-      );
-      if (existe) {
-        alert("Essa categoria já existe.");
-        return;
+      if (tipo === "receita") {
+        const existe = categoriasReceita.some(
+          (c) => c.toLowerCase() === nova.toLowerCase()
+        );
+        if (existe) {
+          alert("Essa categoria já existe.");
+          return;
+        }
+        adicionarCategoria(nova, "receita");
+        atualizarReceita(index, "categoria", nova);
       }
 
-      adicionarCategoria(nova);
-
-      if (tipo === "receita") atualizarReceita(index, "categoria", nova);
-      if (tipo === "despesa") atualizarCategoriaDespesa(index, nova);
+      if (tipo === "despesa") {
+        const existe = categoriasDespesa.some(
+          (c) => c.toLowerCase() === nova.toLowerCase()
+        );
+        if (existe) {
+          alert("Essa categoria já existe.");
+          return;
+        }
+        adicionarCategoria(nova, "despesa");
+        atualizarCategoriaDespesa(index, nova);
+      }
     } else {
       if (tipo === "receita") atualizarReceita(index, "categoria", valor);
       if (tipo === "despesa") atualizarCategoriaDespesa(index, valor);
@@ -106,7 +120,7 @@ export default function NovoPlanejamento({
             ))}
           </select>
           <select value={ano} onChange={(e) => setAno(Number(e.target.value))}>
-            {[2024, 2025, 2026].map((a) => (
+            {[new Date().getFullYear()-1, new Date().getFullYear(), new Date().getFullYear()+1].map((a) => (
               <option key={a} value={a}>{a}</option>
             ))}
           </select>
@@ -124,7 +138,7 @@ export default function NovoPlanejamento({
                 }
                 className="flex-1 p-2 border rounded"
               >
-                {categorias.map((c, idx) => (
+                {categoriasReceita.map((c, idx) => (
                   <option key={idx} value={c}>{c}</option>
                 ))}
                 <option value="__nova__">+ Nova categoria</option>
@@ -146,8 +160,7 @@ export default function NovoPlanejamento({
           </button>
           <p className="mt-2 font-semibold">Total Receita: R$ {somaReceitas}</p>
         </div>
-
-        {/* Despesas */}
+                {/* Despesas */}
         <div className="mb-6">
           <h3 className="font-semibold mb-2">Categorias de Despesa</h3>
           {despesas.map((d, i) => {
@@ -162,7 +175,7 @@ export default function NovoPlanejamento({
                     }
                     className="flex-1 p-2 border rounded"
                   >
-                    {categorias.map((c, idx) => (
+                    {categoriasDespesa.map((c, idx) => (
                       <option key={idx} value={c}>{c}</option>
                     ))}
                     <option value="__nova__">+ Nova categoria</option>
@@ -174,28 +187,27 @@ export default function NovoPlanejamento({
                     + Itens
                   </button>
                 </div>
-                {/* Lista de itens */}
-{d.itens.length > 0 ? (
-  <ul className="ml-4 space-y-2">
-    {d.itens.map((it, idx) => (
-      <li key={idx} className="flex items-center justify-between">
-        <span>{it.nome} — R$ {it.valor}</span>
-        <button
-          className="text-red-600 hover:underline"
-          onClick={() => {
-            const novas = [...despesas];
-            novas[i].itens = novas[i].itens.filter((_, j) => j !== idx);
-            setDespesas(novas);
-          }}
-        >
-          X
-        </button>
-      </li>
-    ))}
-  </ul>
-) : (
-  <p className="text-gray-500 ml-2">Nenhum item adicionado.</p>
-)}
+                {d.itens.length > 0 ? (
+                  <ul className="ml-4 space-y-2">
+                    {d.itens.map((it, idx) => (
+                      <li key={idx} className="flex items-center justify-between">
+                        <span>{it.nome} — R$ {it.valor}</span>
+                        <button
+                          className="text-red-600 hover:underline"
+                          onClick={() => {
+                            const novas = [...despesas];
+                            novas[i].itens = novas[i].itens.filter((_, j) => j !== idx);
+                            setDespesas(novas);
+                          }}
+                        >
+                          X
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-500 ml-2">Nenhum item adicionado.</p>
+                )}
                 <p className="mt-2 font-semibold">Total: R$ {totalCategoria}</p>
               </div>
             );
@@ -208,7 +220,16 @@ export default function NovoPlanejamento({
           </button>
           <p className="mt-2 font-semibold">Total Despesa: R$ {somaDespesas}</p>
         </div>
-                {/* Flag replicar */}
+
+        {/* ✅ Campo fixo Disponível */}
+        <div className="mb-6">
+          <h3 className="font-semibold mb-2">Disponível</h3>
+          <p className={`font-semibold ${disponivel >= 0 ? "text-green-600" : "text-red-600"}`}>
+            R$ {disponivel}
+          </p>
+        </div>
+
+        {/* Flag replicar */}
         <div className="mt-4">
           <label>
             <input
@@ -246,9 +267,8 @@ export default function NovoPlanejamento({
                       className="text-red-600 hover:underline"
                       onClick={() => {
                         const novas = [...despesas];
-                        novas[categoriaSelecionada].itens = novas[categoriaSelecionada].itens.filter(
-                          (_, i) => i !== idx
-                        );
+                        novas[categoriaSelecionada].itens =
+                          novas[categoriaSelecionada].itens.filter((_, i) => i !== idx);
                         setDespesas(novas);
                       }}
                     >

@@ -9,69 +9,90 @@ export default function Objetivos({ planejamentos = [], lancamentos = [] }) {
     ultimoPlanejamento ? Number(ultimoPlanejamento.ano) : new Date().getFullYear()
   );
 
-  console.log("Planejamentos disponíveis:", planejamentos);
-  console.log("Filtro atual:", mes, ano);
-
   const planejamentoSelecionado = (planejamentos || []).find(
     (p) => Number(p.mes) === mes && Number(p.ano) === ano
   );
 
   const receitaPlanejada = planejamentoSelecionado?.receitaTotal || 0;
   const despesasPlanejadas = planejamentoSelecionado?.despesas || [];
+  const disponivelPlanejado = planejamentoSelecionado?.disponivel || 0;
 
+  // Sempre baseado em dataPagamento
   const lancamentosFiltrados = lancamentos.filter((l) => {
-    const dt = new Date(l.data);
-    return dt.getMonth() + 1 === mes && dt.getFullYear() === ano;
+    const [anoStr, mesStr] = (l.dataPagamento || "").split("-");
+    return Number(mesStr) === mes && Number(anoStr) === ano;
   });
 
   const receitaReal = lancamentosFiltrados
-    .filter((l) => l.tipo.toLowerCase() === "receita")
+    .filter((l) => l.tipo?.toLowerCase() === "receita")
     .reduce((acc, l) => acc + Number(l.valor || 0), 0);
 
+  // Despesas por categoria planejada
   const despesasReaisPorCategoria = despesasPlanejadas.map((d) => {
-    const planejado = d.itens?.reduce((acc, it) => acc + Number(it.valor || 0), 0);
+    const planejado = d.itens?.reduce((acc, it) => acc + Number(it.valor || 0), 0) || 0;
     const realizado = lancamentosFiltrados
       .filter(
         (l) =>
-          l.tipo.toLowerCase() === "despesa" &&
-          l.categoria.toLowerCase() === d.categoria.toLowerCase()
+          l.tipo?.toLowerCase() === "despesa" &&
+          l.categoria?.toLowerCase() === d.categoria?.toLowerCase()
       )
       .reduce((acc, l) => acc + Number(l.valor || 0), 0);
 
     return { categoria: d.categoria, planejado, realizado };
   });
 
+  // Evolução do card Disponível = soma de todas as despesas de categorias NÃO planejadas
+  const categoriasPlanejadas = (despesasPlanejadas || []).map((d) =>
+    (d.categoria || "").toLowerCase()
+  );
+
+  const disponivelEvolucao = lancamentosFiltrados
+    .filter(
+      (l) =>
+        l.tipo?.toLowerCase() === "despesa" &&
+        !categoriasPlanejadas.includes((l.categoria || "").toLowerCase())
+    )
+    .reduce((acc, l) => acc + Number(l.valor || 0), 0);
+
+  // Anos dinâmicos (ano atual -2 até ano atual +2)
+  const anoAtual = new Date().getFullYear();
+  const anosDisponiveis = Array.from({ length: 5 }, (_, i) => anoAtual - 2 + i);
+
   return (
     <div className="bg-white rounded-xl shadow-md p-6 text-gray-800 w-full h-full flex flex-col overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-indigo-600">Objetivos</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-1 text-xs text-gray-600">
           <select
             value={mes}
             onChange={(e) => setMes(Number(e.target.value))}
-            className="p-2 border rounded"
+            className="px-2 py-1 border rounded bg-gray-50"
           >
-            <option value="1">Janeiro</option>
-            <option value="2">Fevereiro</option>
-            <option value="3">Março</option>
-            <option value="4">Abril</option>
-            <option value="5">Maio</option>
-            <option value="6">Junho</option>
-            <option value="7">Julho</option>
-            <option value="8">Agosto</option>
-            <option value="9">Setembro</option>
-            <option value="10">Outubro</option>
-            <option value="11">Novembro</option>
-            <option value="12">Dezembro</option>
+            <option value="1">Jan</option>
+            <option value="2">Fev</option>
+            <option value="3">Mar</option>
+            <option value="4">Abr</option>
+            <option value="5">Mai</option>
+            <option value="6">Jun</option>
+            <option value="7">Jul</option>
+            <option value="8">Ago</option>
+            <option value="9">Set</option>
+            <option value="10">Out</option>
+            <option value="11">Nov</option>
+            <option value="12">Dez</option>
           </select>
 
-          <input
-            type="number"
+          <select
             value={ano}
             onChange={(e) => setAno(Number(e.target.value))}
-            className="p-2 border rounded w-24"
-            placeholder="Ano"
-          />
+            className="px-2 py-1 border rounded bg-gray-50"
+          >
+            {anosDisponiveis.map((anoOption) => (
+              <option key={anoOption} value={anoOption}>
+                {anoOption}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -81,8 +102,8 @@ export default function Objetivos({ planejamentos = [], lancamentos = [] }) {
         </p>
       ) : (
         <>
-          {/* Receitas (mantém diferença) */}
-          <div className="mb-6">
+          {/* Receitas */}
+          <div className="mb-6 border rounded p-2 bg-gradient-to-r from-green-50 to-emerald-100">
             <h3 className="font-semibold mb-2">Receitas</h3>
             <p>Planejado: R$ {receitaPlanejada}</p>
             <p>Realizado: R$ {receitaReal}</p>
@@ -90,9 +111,9 @@ export default function Objetivos({ planejamentos = [], lancamentos = [] }) {
               Diferença: R$ {receitaReal - receitaPlanejada} (
               {receitaPlanejada > 0
                 ? ((receitaReal / receitaPlanejada) * 100).toFixed(1)
-                : "0"}%)
+                : "0"}
+              %)
             </p>
-
             <div className="w-full bg-gray-200 rounded h-4 mt-2">
               <div
                 className="h-4 rounded bg-green-500 transition-all duration-500"
@@ -106,13 +127,13 @@ export default function Objetivos({ planejamentos = [], lancamentos = [] }) {
             </div>
           </div>
 
-          {/* Despesas (usa saldo) */}
-          <div>
+          {/* Despesas planejadas */}
+          <div className="mb-6 border rounded p-2 bg-gradient-to-r from-red-50 to-pink-100">
             <h3 className="font-semibold mb-2">Despesas</h3>
             {despesasReaisPorCategoria.map((d, idx) => {
               const saldo = d.planejado - d.realizado;
               return (
-                <div key={idx} className="mb-4 border rounded p-2">
+                <div key={idx} className="mb-4 border rounded p-2 bg-gradient-to-r from-red-50 to-pink-100">
                   <p className="font-semibold">{d.categoria}</p>
                   <p>Planejado: R$ {d.planejado}</p>
                   <p>Realizado: R$ {d.realizado}</p>
@@ -120,9 +141,9 @@ export default function Objetivos({ planejamentos = [], lancamentos = [] }) {
                     Saldo: R$ {saldo} (
                     {d.planejado > 0
                       ? ((d.realizado / d.planejado) * 100).toFixed(1)
-                      : "0"}%)
+                      : "0"}
+                    %)
                   </p>
-
                   <div className="w-full bg-gray-200 rounded h-4 mt-2">
                     <div
                       className="h-4 rounded bg-red-500 transition-all duration-500"
@@ -137,6 +158,33 @@ export default function Objetivos({ planejamentos = [], lancamentos = [] }) {
                 </div>
               );
             })}
+          </div>
+
+          {/* Disponível */}
+          <div className="mb-6 border rounded p-2 bg-gradient-to-r from-blue-50 to-indigo-100">
+            <h3 className="font-semibold mb-2">Disponível</h3>
+            <p>Planejado: R$ {disponivelPlanejado}</p>
+            <p>Realizado (evolução): R$ {disponivelEvolucao}</p>
+            <p className="font-semibold">
+              Saldo: R$ {disponivelPlanejado - disponivelEvolucao} (
+              {disponivelPlanejado > 0
+                ? ((disponivelEvolucao / disponivelPlanejado) * 100).toFixed(1)
+                : "0"}
+              %)
+            </p>
+            <div className="w-full bg-gray-200 rounded h-4 mt-2">
+              <div
+                className={`h-4 rounded ${
+                  disponivelEvolucao <= disponivelPlanejado ? "bg-green-500" : "bg-red-500"
+                } transition-all duration-500`}
+                style={{
+                  width: `${Math.min(
+                    (disponivelEvolucao / disponivelPlanejado) * 100,
+                    100
+                  )}%`,
+                }}
+              ></div>
+            </div>
           </div>
         </>
       )}

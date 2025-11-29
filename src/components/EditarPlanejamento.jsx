@@ -4,7 +4,8 @@ export default function EditarPlanejamento({
   planejamento,
   atualizarPlanejamento,
   setScreen,
-  categorias,
+  categoriasReceita,
+  categoriasDespesa,
   adicionarCategoria,
 }) {
   const [mes, setMes] = useState(planejamento.mes);
@@ -24,6 +25,8 @@ export default function EditarPlanejamento({
     0
   );
 
+  const disponivel = somaReceitas - somaDespesas;
+
   const atualizarReceita = (index, campo, valor) => {
     const novas = [...receitas];
     novas[index][campo] = valor;
@@ -31,10 +34,10 @@ export default function EditarPlanejamento({
   };
 
   const adicionarReceita = () =>
-    setReceitas([...receitas, { categoria: categorias[0] || "", valor: 0 }]);
+    setReceitas([...receitas, { categoria: categoriasReceita[0] || "", valor: 0 }]);
 
   const adicionarDespesa = () =>
-    setDespesas([...despesas, { categoria: categorias[0] || "", itens: [] }]);
+    setDespesas([...despesas, { categoria: categoriasDespesa[0] || "", itens: [] }]);
 
   const atualizarCategoriaDespesa = (index, valor) => {
     const novas = [...despesas];
@@ -62,6 +65,7 @@ export default function EditarPlanejamento({
       ano,
       receitaTotal: somaReceitas,
       despesasTotal: somaDespesas,
+      disponivel,
       receitas,
       despesas,
       replicarAno,
@@ -69,7 +73,8 @@ export default function EditarPlanejamento({
     atualizarPlanejamento(atualizado);
     setScreen("planejamento");
   };
-    return (
+
+  return (
     <div className="bg-white rounded-xl shadow-md p-6 text-gray-800 w-full h-full relative flex flex-col">
       <h2 className="text-xl font-bold text-indigo-600 mb-4">Editar Planejamento</h2>
 
@@ -85,9 +90,10 @@ export default function EditarPlanejamento({
                 onChange={(e) => atualizarReceita(i, "categoria", e.target.value)}
                 className="flex-1 p-2 border rounded"
               >
-                {categorias.map((c, idx) => (
+                {categoriasReceita.map((c, idx) => (
                   <option key={idx} value={c}>{c}</option>
                 ))}
+                <option value="__nova__">+ Nova categoria</option>
               </select>
               <input
                 type="number"
@@ -106,8 +112,7 @@ export default function EditarPlanejamento({
           </button>
           <p className="mt-2 font-semibold">Total Receita: R$ {somaReceitas}</p>
         </div>
-
-        {/* Despesas */}
+                {/* Despesas */}
         <div className="mb-6">
           <h3 className="font-semibold mb-2">Categorias de Despesa</h3>
           {despesas.map((d, i) => {
@@ -120,9 +125,10 @@ export default function EditarPlanejamento({
                     onChange={(e) => atualizarCategoriaDespesa(i, e.target.value)}
                     className="flex-1 p-2 border rounded"
                   >
-                    {categorias.map((c, idx) => (
+                    {categoriasDespesa.map((c, idx) => (
                       <option key={idx} value={c}>{c}</option>
                     ))}
+                    <option value="__nova__">+ Nova categoria</option>
                   </select>
                   <button
                     onClick={() => abrirModalItens(i)}
@@ -164,8 +170,17 @@ export default function EditarPlanejamento({
           </button>
           <p className="mt-2 font-semibold">Total Despesa: R$ {somaDespesas}</p>
         </div>
+
+        {/* Disponível */}
+        <div className="mb-6">
+          <h3 className="font-semibold mb-2">Disponível</h3>
+          <p className={`font-semibold ${disponivel >= 0 ? "text-green-600" : "text-red-600"}`}>
+            R$ {disponivel}
+          </p>
+        </div>
       </div>
-            {/* Botões de ação */}
+
+      {/* Botões de ação */}
       <div className="flex justify-end gap-2 mt-4">
         <button
           onClick={() => setScreen("planejamento")}
@@ -189,7 +204,6 @@ export default function EditarPlanejamento({
               Itens — {despesas[categoriaSelecionada]?.categoria}
             </h3>
 
-            {/* Lista de itens atuais */}
             {despesas[categoriaSelecionada]?.itens?.length > 0 ? (
               <ul className="mb-4 space-y-2">
                 {despesas[categoriaSelecionada].itens.map((it, idx) => (
@@ -213,7 +227,6 @@ export default function EditarPlanejamento({
               <p className="text-gray-500 mb-4">Nenhum item adicionado ainda.</p>
             )}
 
-            {/* Form de novo item */}
             <div className="flex gap-2 mb-4">
               <input
                 type="text"

@@ -11,16 +11,17 @@ export default function Home({ lancamentos = [], setScreen }) {
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
   ];
 
-  // Filtra lançamentos do mês/ano selecionado
+  // ✅ Filtra lançamentos do mês/ano selecionado usando dataPagamento
   const lancamentosDoMes = lancamentos.filter((l) => {
-    const data = new Date(l.data);
+    if (!l.dataPagamento) return false;
+    const [anoStr, mesStr] = l.dataPagamento.split("-");
     return (
-      data.getMonth() === mesSelecionado &&
-      data.getFullYear() === anoSelecionado
+      Number(mesStr) - 1 === mesSelecionado &&
+      Number(anoStr) === anoSelecionado
     );
   });
 
-  // Calcula totais (mantido exatamente como estava)
+  // Calcula totais
   const totalReceitas = lancamentosDoMes
     .filter((l) => l.tipo.toLowerCase() === "receita")
     .reduce((acc, l) => acc + Number(l.valor), 0);
@@ -34,9 +35,13 @@ export default function Home({ lancamentos = [], setScreen }) {
   const formatar = (valor) =>
     valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+  // ✅ Lista dinâmica de anos (ano anterior, atual e próximo)
+  const anoAtual = hoje.getFullYear();
+  const anosDisponiveis = [anoAtual - 1, anoAtual, anoAtual + 1];
+
   return (
     <div className="w-full">
-      {/* Container branco: sem altura fixa, mantém largura */}
+      {/* Container branco */}
       <div className="bg-white rounded-xl shadow-md p-6 text-gray-800 w-full">
         {/* Cabeçalho com selects */}
         <div className="flex items-center gap-2 mb-4">
@@ -57,13 +62,11 @@ export default function Home({ lancamentos = [], setScreen }) {
             onChange={(e) => setAnoSelecionado(Number(e.target.value))}
             className="border rounded-lg p-1 text-sm"
           >
-            {Array.from({ length: 11 }, (_, i) => anoSelecionado - 5 + i).map(
-              (ano) => (
-                <option key={ano} value={ano}>
-                  {ano}
-                </option>
-              )
-            )}
+            {anosDisponiveis.map((ano) => (
+              <option key={ano} value={ano}>
+                {ano}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -86,8 +89,8 @@ export default function Home({ lancamentos = [], setScreen }) {
         </div>
       </div>
 
-      {/* Ícones abaixo do container branco */}
-         <div className="mt-16 flex justify-around w-full max-w-md">
+      {/* Ícones abaixo */}
+      <div className="mt-16 flex justify-around w-full max-w-md">
         {/* Relatórios */}
         <div
           onClick={() => setScreen("relatorios")}

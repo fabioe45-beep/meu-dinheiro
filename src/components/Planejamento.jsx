@@ -88,40 +88,61 @@ export default function Planejamento({
               </div>
 
               {/* Despesas */}
-<div>
-  <p className="font-bold">Despesas</p>
-  {p.despesas && p.despesas.length > 0 ? (
-    p.despesas.map((d, idx) => {
-      const totalCategoria = d.itens.reduce((acc, it) => acc + Number(it.valor || 0), 0);
-      return (
-        <div key={idx} className="mb-2">
-          <p className="font-semibold">{d.categoria} — Total: R$ {totalCategoria}</p>
-          {d.itens.length > 0 ? (
-            <ul className="ml-6 list-disc">
-              {d.itens.map((it, j) => (
-                <li key={j}>
-                  {it.nome} — R$ {it.valor}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500 ml-6">Nenhum item adicionado.</p>
-          )}
-        </div>
-      );
-    })
-  ) : (
-    <p className="text-gray-500">Nenhuma despesa</p>
-  )}
-  <p className="mt-1 font-semibold">Total: R$ {p.despesasTotal}</p>
-</div>
+              <div>
+                <p className="font-bold">Despesas</p>
+                {p.despesas && p.despesas.length > 0 ? (
+                  p.despesas.map((d, idx) => {
+                    const totalCategoria = d.itens.reduce(
+                      (acc, it) => acc + Number(it.valor || 0),
+                      0
+                    );
+                    return (
+                      <div key={idx} className="mb-2">
+                        <p className="font-semibold">
+                          {d.categoria} — Total: R$ {totalCategoria}
+                        </p>
+                        {d.itens.length > 0 ? (
+                          <ul className="ml-6 list-disc">
+                            {d.itens.map((it, j) => (
+                              <li key={j}>
+                                {it.nome} — R$ {it.valor}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-gray-500 ml-6">
+                            Nenhum item adicionado.
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-gray-500">Nenhuma despesa</p>
+                )}
+                <p className="mt-1 font-semibold">Total: R$ {p.despesasTotal}</p>
+              </div>
+
+              {/* ✅ Disponível */}
+              <div className="mt-2">
+                <p className="font-bold">Disponível</p>
+                <p
+                  className={`font-semibold ${
+                    p.disponivel >= 0 ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  R$ {p.disponivel}
+                </p>
+              </div>
 
               {/* Botão excluir */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   if (
-                    window.confirm("Tem certeza que deseja excluir este planejamento?")
+                    window.confirm(
+                      "Tem certeza que deseja excluir este planejamento?"
+                    )
                   ) {
                     excluirPlanejamento(p.id);
                   }
