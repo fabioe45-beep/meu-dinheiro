@@ -9,60 +9,39 @@ import Planejamento from "./components/Planejamento";
 import NovoPlanejamento from "./components/NovoPlanejamento";
 import EditarPlanejamento from "./components/EditarPlanejamento";
 import Relatorios from "./components/Relatorios";
+import { carregar, salvar } from "./utils/db";   // ✅ utilitário IndexedDB
 
 export default function App() {
   const [screen, setScreen] = useState("home");
 
   // categorias separadas
-  const [categoriasReceita, setCategoriasReceita] = useState(() => {
-    const saved = localStorage.getItem("categoriasReceita");
-    return saved ? JSON.parse(saved) : ["Salário", "Investimentos"];
-  });
-
-  const [categoriasDespesa, setCategoriasDespesa] = useState(() => {
-    const saved = localStorage.getItem("categoriasDespesa");
-    return saved ? JSON.parse(saved) : ["Alimentação", "Transporte", "Saúde"];
-  });
-
-  const [objetivos, setObjetivos] = useState(() => {
-    const saved = localStorage.getItem("objetivos");
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [lancamentos, setLancamentos] = useState(() => {
-    const saved = localStorage.getItem("lancamentos");
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [planejamentos, setPlanejamentos] = useState(() => {
-    const saved = localStorage.getItem("planejamentos");
-    return saved ? JSON.parse(saved) : [];
-  });
-
+  const [categoriasReceita, setCategoriasReceita] = useState(["Salário", "Investimentos"]);
+  const [categoriasDespesa, setCategoriasDespesa] = useState(["Alimentação", "Transporte", "Saúde"]);
+  const [objetivos, setObjetivos] = useState([]);
+  const [lancamentos, setLancamentos] = useState([]);
+  const [planejamentos, setPlanejamentos] = useState([]);
   const [planejamentoSelecionado, setPlanejamentoSelecionado] = useState(null);
 
-  // Persistência
+  // ✅ Carregar dados do IndexedDB ao iniciar
   useEffect(() => {
-    localStorage.setItem("categoriasReceita", JSON.stringify(categoriasReceita));
-  }, [categoriasReceita]);
+    async function carregarDados() {
+      setCategoriasReceita(await carregar("categoriasReceita", ["Salário", "Investimentos"]));
+      setCategoriasDespesa(await carregar("categoriasDespesa", ["Alimentação", "Transporte", "Saúde"]));
+      setObjetivos(await carregar("objetivos", []));
+      setLancamentos(await carregar("lancamentos", []));
+      setPlanejamentos(await carregar("planejamentos", []));
+    }
+    carregarDados();
+  }, []);
 
-  useEffect(() => {
-    localStorage.setItem("categoriasDespesa", JSON.stringify(categoriasDespesa));
-  }, [categoriasDespesa]);
+  // ✅ Salvar sempre que mudar
+  useEffect(() => { salvar("categoriasReceita", categoriasReceita); }, [categoriasReceita]);
+  useEffect(() => { salvar("categoriasDespesa", categoriasDespesa); }, [categoriasDespesa]);
+  useEffect(() => { salvar("objetivos", objetivos); }, [objetivos]);
+  useEffect(() => { salvar("lancamentos", lancamentos); }, [lancamentos]);
+  useEffect(() => { salvar("planejamentos", planejamentos); }, [planejamentos]);
 
-  useEffect(() => {
-    localStorage.setItem("objetivos", JSON.stringify(objetivos));
-  }, [objetivos]);
-
-  useEffect(() => {
-    localStorage.setItem("lancamentos", JSON.stringify(lancamentos));
-  }, [lancamentos]);
-
-  useEffect(() => {
-    localStorage.setItem("planejamentos", JSON.stringify(planejamentos));
-  }, [planejamentos]);
-
-  // Funções principais
+  // Funções principais (iguais, só mudam os states)
   const adicionarCategoria = (nova, tipo) => {
     if (tipo === "receita") {
       if (nova && !categoriasReceita.includes(nova)) {
@@ -88,7 +67,6 @@ export default function App() {
 
   const adicionarPlanejamento = (novo) => {
     const uid = () => Math.random().toString(36).slice(2);
-
     if (novo.replicarAno) {
       const existeAno = planejamentos.some((p) => p.ano === novo.ano);
       if (existeAno) {
@@ -96,16 +74,10 @@ export default function App() {
         return;
       }
       const todosMeses = Array.from({ length: 12 }, (_, i) => i + 1);
-      const replicados = todosMeses.map((mes) => ({
-        ...novo,
-        mes,
-        id: uid(),
-      }));
+      const replicados = todosMeses.map((mes) => ({ ...novo, mes, id: uid() }));
       setPlanejamentos((prev) => [...prev, ...replicados]);
     } else {
-      const existe = planejamentos.some(
-        (p) => p.mes === novo.mes && p.ano === novo.ano
-      );
+      const existe = planejamentos.some((p) => p.mes === novo.mes && p.ano === novo.ano);
       if (existe) {
         alert(`Já existe um planejamento para ${novo.mes}/${novo.ano}.`);
         return;
@@ -116,9 +88,7 @@ export default function App() {
   };
 
   const atualizarPlanejamento = (atualizado) => {
-    setPlanejamentos((prev) =>
-      prev.map((p) => (p.id === atualizado.id ? atualizado : p))
-    );
+    setPlanejamentos((prev) => prev.map((p) => (p.id === atualizado.id ? atualizado : p)));
   };
 
   const excluirPlanejamento = (id) => {
@@ -128,21 +98,12 @@ export default function App() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-700 to-pink-600 text-white flex flex-col">
       <Header />
-
       <main className="flex-1 flex flex-col items-center w-full max-w-md mx-auto p-4">
-        {/* ✅ Home fora do container branco */}
-        {screen === "home" && (
-          <Home lancamentos={lancamentos} setScreen={setScreen} />
-        )}
-
-        {/* ✅ Demais telas dentro do container branco */}
+        {screen === "home" && <Home lancamentos={lancamentos} setScreen={setScreen} />}
         {screen !== "home" && (
           <div className="bg-white rounded-xl shadow-md p-1 text-gray-800 w-full h-[calc(100vh-180px)] overflow-y-auto">
             {screen === "lancamentos" && (
-              <Lancamentos
-                lancamentos={lancamentos}
-                excluirLancamento={excluirLancamento}
-              />
+              <Lancamentos lancamentos={lancamentos} excluirLancamento={excluirLancamento} />
             )}
             {screen === "formulario" && (
               <Formulario
@@ -185,16 +146,14 @@ export default function App() {
             {screen === "relatorios" && (
               <Relatorios
                 lancamentos={lancamentos}
-    planejamentos={planejamentos}
-    categoriasReceita={categoriasReceita}
-    categoriasDespesa={categoriasDespesa}
-
+                planejamentos={planejamentos}
+                categoriasReceita={categoriasReceita}
+                categoriasDespesa={categoriasDespesa}
               />
             )}
           </div>
         )}
       </main>
-
       <Navigation screen={screen} setScreen={setScreen} />
     </div>
   );
