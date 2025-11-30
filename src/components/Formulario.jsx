@@ -36,7 +36,8 @@ export default function Formulario({
     if (!podeEnviar) return;
 
     const dataObj = new Date(data);
-    const v = Number(valor);
+    // ✅ valor sempre com 2 casas decimais
+    const v = Number(parseFloat(valor).toFixed(2));
 
     // Caso 1: nenhum flag
     if (!usarMesSeguinte && !repetir) {

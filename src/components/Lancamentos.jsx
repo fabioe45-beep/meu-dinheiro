@@ -161,7 +161,7 @@ export default function Lancamentos({ lancamentos, excluirLancamento }) {
                   onClick={() => excluirLancamento(index)}
                   className="text-red-400 hover:text-red-600 text-xs"
                 >
-                  Excluir
+                  X
                 </button>
               </li>
             );

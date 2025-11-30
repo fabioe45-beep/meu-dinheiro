@@ -22,7 +22,7 @@ export default function Planejamento({
   });
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-6 text-gray-800 w-full h-full relative flex flex-col">
+    <div className="bg-white rounded-xl shadow-md p-2 text-gray-800 w-full h-full relative flex flex-col overflow-x-hidden">
       <h2 className="text-xl font-bold text-indigo-600 mb-4">Planejamentos</h2>
 
       {/* Filtro */}
@@ -30,7 +30,7 @@ export default function Planejamento({
         <select
           value={filtroMes}
           onChange={(e) => setFiltroMes(e.target.value)}
-          className="p-2 border rounded"
+          className="px-1 py-1 border border-gray-300 rounded-md bg-white/60 text-gray-700 text-sm focus:outline-none"
         >
           <option value="">Todos os meses</option>
           {[...Array(12)].map((_, i) => (
@@ -43,7 +43,7 @@ export default function Planejamento({
         <select
           value={filtroAno}
           onChange={(e) => setFiltroAno(e.target.value)}
-          className="p-2 border rounded"
+          className="px-1 py-1 border border-gray-300 rounded-md bg-white/60 text-gray-700 text-sm focus:outline-none"
         >
           <option value="">Todos os anos</option>
           {[2024, 2025, 2026, 2027].map((a) => (

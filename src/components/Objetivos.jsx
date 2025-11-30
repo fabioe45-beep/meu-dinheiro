@@ -13,9 +13,9 @@ export default function Objetivos({ planejamentos = [], lancamentos = [] }) {
     (p) => Number(p.mes) === mes && Number(p.ano) === ano
   );
 
-  const receitaPlanejada = planejamentoSelecionado?.receitaTotal || 0;
+  const receitaPlanejada = Number(parseFloat(planejamentoSelecionado?.receitaTotal || 0).toFixed(2));
   const despesasPlanejadas = planejamentoSelecionado?.despesas || [];
-  const disponivelPlanejado = planejamentoSelecionado?.disponivel || 0;
+  const disponivelPlanejado = Number(parseFloat(planejamentoSelecionado?.disponivel || 0).toFixed(2));
 
   // Sempre baseado em dataPagamento
   const lancamentosFiltrados = lancamentos.filter((l) => {
@@ -23,20 +23,30 @@ export default function Objetivos({ planejamentos = [], lancamentos = [] }) {
     return Number(mesStr) === mes && Number(anoStr) === ano;
   });
 
-  const receitaReal = lancamentosFiltrados
-    .filter((l) => l.tipo?.toLowerCase() === "receita")
-    .reduce((acc, l) => acc + Number(l.valor || 0), 0);
+  const receitaReal = Number(
+    parseFloat(
+      lancamentosFiltrados
+        .filter((l) => l.tipo?.toLowerCase() === "receita")
+        .reduce((acc, l) => acc + Number(l.valor || 0), 0)
+    ).toFixed(2)
+  );
 
   // Despesas por categoria planejada
   const despesasReaisPorCategoria = despesasPlanejadas.map((d) => {
-    const planejado = d.itens?.reduce((acc, it) => acc + Number(it.valor || 0), 0) || 0;
-    const realizado = lancamentosFiltrados
-      .filter(
-        (l) =>
-          l.tipo?.toLowerCase() === "despesa" &&
-          l.categoria?.toLowerCase() === d.categoria?.toLowerCase()
-      )
-      .reduce((acc, l) => acc + Number(l.valor || 0), 0);
+    const planejado = Number(
+      parseFloat(d.itens?.reduce((acc, it) => acc + Number(it.valor || 0), 0) || 0).toFixed(2)
+    );
+    const realizado = Number(
+      parseFloat(
+        lancamentosFiltrados
+          .filter(
+            (l) =>
+              l.tipo?.toLowerCase() === "despesa" &&
+              l.categoria?.toLowerCase() === d.categoria?.toLowerCase()
+          )
+          .reduce((acc, l) => acc + Number(l.valor || 0), 0)
+      ).toFixed(2)
+    );
 
     return { categoria: d.categoria, planejado, realizado };
   });
@@ -46,17 +56,27 @@ export default function Objetivos({ planejamentos = [], lancamentos = [] }) {
     (d.categoria || "").toLowerCase()
   );
 
-  const disponivelEvolucao = lancamentosFiltrados
-    .filter(
-      (l) =>
-        l.tipo?.toLowerCase() === "despesa" &&
-        !categoriasPlanejadas.includes((l.categoria || "").toLowerCase())
-    )
-    .reduce((acc, l) => acc + Number(l.valor || 0), 0);
+  const disponivelEvolucao = Number(
+    parseFloat(
+      lancamentosFiltrados
+        .filter(
+          (l) =>
+            l.tipo?.toLowerCase() === "despesa" &&
+            !categoriasPlanejadas.includes((l.categoria || "").toLowerCase())
+        )
+        .reduce((acc, l) => acc + Number(l.valor || 0), 0)
+    ).toFixed(2)
+  );
 
   // Anos dinâmicos (ano atual -2 até ano atual +2)
   const anoAtual = new Date().getFullYear();
   const anosDisponiveis = Array.from({ length: 5 }, (_, i) => anoAtual - 2 + i);
+
+  // Helpers de percentual e largura (evitam NaN/Infinity)
+  const pct = (real, plan) =>
+    plan > 0 ? Number(((real / plan) * 100).toFixed(1)) : 0;
+  const widthPct = (real, plan) =>
+    plan > 0 ? Math.min((real / plan) * 100, 100) : 0;
 
   return (
     <div className="bg-white rounded-xl shadow-md p-6 text-gray-800 w-full h-full flex flex-col overflow-y-auto">
@@ -105,23 +125,17 @@ export default function Objetivos({ planejamentos = [], lancamentos = [] }) {
           {/* Receitas */}
           <div className="mb-6 border rounded p-2 bg-gradient-to-r from-green-50 to-emerald-100">
             <h3 className="font-semibold mb-2">Receitas</h3>
-            <p>Planejado: R$ {receitaPlanejada}</p>
-            <p>Realizado: R$ {receitaReal}</p>
+            <p>Planejado: R$ {receitaPlanejada.toFixed(2)}</p>
+            <p>Realizado: R$ {receitaReal.toFixed(2)}</p>
             <p className="font-semibold">
-              Diferença: R$ {receitaReal - receitaPlanejada} (
-              {receitaPlanejada > 0
-                ? ((receitaReal / receitaPlanejada) * 100).toFixed(1)
-                : "0"}
-              %)
+              Diferença: R$ {(receitaReal - receitaPlanejada).toFixed(2)} (
+              {pct(receitaReal, receitaPlanejada)}%)
             </p>
             <div className="w-full bg-gray-200 rounded h-4 mt-2">
               <div
                 className="h-4 rounded bg-green-500 transition-all duration-500"
                 style={{
-                  width: `${Math.min(
-                    (receitaReal / receitaPlanejada) * 100,
-                    100
-                  )}%`,
+                  width: `${widthPct(receitaReal, receitaPlanejada)}%`,
                 }}
               ></div>
             </div>
@@ -131,27 +145,23 @@ export default function Objetivos({ planejamentos = [], lancamentos = [] }) {
           <div className="mb-6 border rounded p-2 bg-gradient-to-r from-red-50 to-pink-100">
             <h3 className="font-semibold mb-2">Despesas</h3>
             {despesasReaisPorCategoria.map((d, idx) => {
-              const saldo = d.planejado - d.realizado;
+              const saldo = Number((d.planejado - d.realizado).toFixed(2));
               return (
-                <div key={idx} className="mb-4 border rounded p-2 bg-gradient-to-r from-red-50 to-pink-100">
+                <div
+                  key={idx}
+                  className="mb-4 border rounded p-2 bg-gradient-to-r from-red-50 to-pink-100"
+                >
                   <p className="font-semibold">{d.categoria}</p>
-                  <p>Planejado: R$ {d.planejado}</p>
-                  <p>Realizado: R$ {d.realizado}</p>
+                  <p>Planejado: R$ {d.planejado.toFixed(2)}</p>
+                  <p>Realizado: R$ {d.realizado.toFixed(2)}</p>
                   <p className="font-semibold">
-                    Saldo: R$ {saldo} (
-                    {d.planejado > 0
-                      ? ((d.realizado / d.planejado) * 100).toFixed(1)
-                      : "0"}
-                    %)
+                    Saldo: R$ {saldo.toFixed(2)} ({pct(d.realizado, d.planejado)}%)
                   </p>
                   <div className="w-full bg-gray-200 rounded h-4 mt-2">
                     <div
                       className="h-4 rounded bg-red-500 transition-all duration-500"
                       style={{
-                        width: `${Math.min(
-                          (d.realizado / d.planejado) * 100,
-                          100
-                        )}%`,
+                        width: `${widthPct(d.realizado, d.planejado)}%`,
                       }}
                     ></div>
                   </div>
@@ -163,14 +173,11 @@ export default function Objetivos({ planejamentos = [], lancamentos = [] }) {
           {/* Disponível */}
           <div className="mb-6 border rounded p-2 bg-gradient-to-r from-blue-50 to-indigo-100">
             <h3 className="font-semibold mb-2">Disponível</h3>
-            <p>Planejado: R$ {disponivelPlanejado}</p>
-            <p>Realizado (evolução): R$ {disponivelEvolucao}</p>
+            <p>Planejado: R$ {disponivelPlanejado.toFixed(2)}</p>
+            <p>Realizado (evolução): R$ {disponivelEvolucao.toFixed(2)}</p>
             <p className="font-semibold">
-              Saldo: R$ {disponivelPlanejado - disponivelEvolucao} (
-              {disponivelPlanejado > 0
-                ? ((disponivelEvolucao / disponivelPlanejado) * 100).toFixed(1)
-                : "0"}
-              %)
+              Saldo: R$ {(disponivelPlanejado - disponivelEvolucao).toFixed(2)} (
+              {pct(disponivelEvolucao, disponivelPlanejado)}%)
             </p>
             <div className="w-full bg-gray-200 rounded h-4 mt-2">
               <div
@@ -178,10 +185,7 @@ export default function Objetivos({ planejamentos = [], lancamentos = [] }) {
                   disponivelEvolucao <= disponivelPlanejado ? "bg-green-500" : "bg-red-500"
                 } transition-all duration-500`}
                 style={{
-                  width: `${Math.min(
-                    (disponivelEvolucao / disponivelPlanejado) * 100,
-                    100
-                  )}%`,
+                  width: `${widthPct(disponivelEvolucao, disponivelPlanejado)}%`,
                 }}
               ></div>
             </div>

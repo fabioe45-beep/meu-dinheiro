@@ -137,7 +137,7 @@ export default function App() {
 
         {/* ✅ Demais telas dentro do container branco */}
         {screen !== "home" && (
-          <div className="bg-white rounded-xl shadow-md p-4 text-gray-800 w-full h-[calc(100vh-180px)] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-md p-1 text-gray-800 w-full h-[calc(100vh-180px)] overflow-y-auto">
             {screen === "lancamentos" && (
               <Lancamentos
                 lancamentos={lancamentos}
