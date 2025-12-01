@@ -10,6 +10,10 @@ import NovoPlanejamento from "./components/NovoPlanejamento";
 import EditarPlanejamento from "./components/EditarPlanejamento";
 import Relatorios from "./components/Relatorios";
 import { carregar, salvar } from "./utils/db";   // ✅ utilitário IndexedDB
+import { registerSW } from "./serviceWorkerRegistration";
+registerSW();
+
+
 
 export default function App() {
   const [screen, setScreen] = useState("home");

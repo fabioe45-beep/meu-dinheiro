@@ -1,16 +1,14 @@
 // src/serviceWorkerRegistration.js
-
-// Esse código registra o service worker para transformar seu app em PWA
-export function register() {
+export function registerSW() {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
       navigator.serviceWorker
-        .register("/service-worker.js")
+        .register("/meu-dinheiro/service-worker.js") // ✅ precisa estar em public/
         .then((registration) => {
-          console.log("Service Worker registrado:", registration);
+          console.log("✅ Service Worker registrado com sucesso:", registration);
         })
         .catch((error) => {
-          console.error("Erro ao registrar Service Worker:", error);
+          console.error("❌ Erro ao registrar Service Worker:", error);
         });
     });
   }
