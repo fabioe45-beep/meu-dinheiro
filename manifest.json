@@ -1,19 +1,18 @@
 {
   "name": "Meu Dinheiro",
   "short_name": "Dinheiro",
-  "start_url": ".",
+  "start_url": "/meu-dinheiro/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#4CAF50",
-  "description": "Controle simples e rápido das suas finanças pessoais.",
+  "theme_color": "#4f46e5",
   "icons": [
     {
-      "src": "/meu-dinheiro/public/icons/icon-192.png",
+      "src": "/meu-dinheiro/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/meu-dinheiro/public/icons/icon-512.png",
+      "src": "/meu-dinheiro/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
