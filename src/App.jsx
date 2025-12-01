@@ -10,10 +10,6 @@ import NovoPlanejamento from "./components/NovoPlanejamento";
 import EditarPlanejamento from "./components/EditarPlanejamento";
 import Relatorios from "./components/Relatorios";
 import { carregar, salvar } from "./utils/db";   // ✅ utilitário IndexedDB
-import { registerSW } from "./serviceWorkerRegistration";
-registerSW();
-
-
 
 export default function App() {
   const [screen, setScreen] = useState("home");
@@ -26,6 +22,9 @@ export default function App() {
   const [planejamentos, setPlanejamentos] = useState([]);
   const [planejamentoSelecionado, setPlanejamentoSelecionado] = useState(null);
 
+  // flag para evitar sobrescrever antes de carregar
+  const [dadosCarregados, setDadosCarregados] = useState(false);
+
   // ✅ Carregar dados do IndexedDB ao iniciar
   useEffect(() => {
     async function carregarDados() {
@@ -34,18 +33,19 @@ export default function App() {
       setObjetivos(await carregar("objetivos", []));
       setLancamentos(await carregar("lancamentos", []));
       setPlanejamentos(await carregar("planejamentos", []));
+      setDadosCarregados(true);
     }
     carregarDados();
   }, []);
 
-  // ✅ Salvar sempre que mudar
-  useEffect(() => { salvar("categoriasReceita", categoriasReceita); }, [categoriasReceita]);
-  useEffect(() => { salvar("categoriasDespesa", categoriasDespesa); }, [categoriasDespesa]);
-  useEffect(() => { salvar("objetivos", objetivos); }, [objetivos]);
-  useEffect(() => { salvar("lancamentos", lancamentos); }, [lancamentos]);
-  useEffect(() => { salvar("planejamentos", planejamentos); }, [planejamentos]);
+  // ✅ Salvar sempre que mudar (apenas depois de carregar)
+  useEffect(() => { if (dadosCarregados) salvar("categoriasReceita", categoriasReceita); }, [categoriasReceita, dadosCarregados]);
+  useEffect(() => { if (dadosCarregados) salvar("categoriasDespesa", categoriasDespesa); }, [categoriasDespesa, dadosCarregados]);
+  useEffect(() => { if (dadosCarregados) salvar("objetivos", objetivos); }, [objetivos, dadosCarregados]);
+  useEffect(() => { if (dadosCarregados) salvar("lancamentos", lancamentos); }, [lancamentos, dadosCarregados]);
+  useEffect(() => { if (dadosCarregados) salvar("planejamentos", planejamentos); }, [planejamentos, dadosCarregados]);
 
-  // Funções principais (iguais, só mudam os states)
+  // Funções principais
   const adicionarCategoria = (nova, tipo) => {
     if (tipo === "receita") {
       if (nova && !categoriasReceita.includes(nova)) {

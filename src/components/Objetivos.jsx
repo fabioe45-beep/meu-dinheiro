@@ -174,7 +174,7 @@ export default function Objetivos({ planejamentos = [], lancamentos = [] }) {
           <div className="mb-6 border rounded p-2 bg-gradient-to-r from-blue-50 to-indigo-100">
             <h3 className="font-semibold mb-2">Disponível</h3>
             <p>Planejado: R$ {disponivelPlanejado.toFixed(2)}</p>
-            <p>Realizado (evolução): R$ {disponivelEvolucao.toFixed(2)}</p>
+            <p>Realizado: R$ {disponivelEvolucao.toFixed(2)}</p>
             <p className="font-semibold">
               Saldo: R$ {(disponivelPlanejado - disponivelEvolucao).toFixed(2)} (
               {pct(disponivelEvolucao, disponivelPlanejado)}%)

@@ -1,35 +1,38 @@
-// db.js
-import { openDB } from "idb";
+// utils/db.js
+const DB_NAME = "meu-dinheiro";
+const DB_VERSION = 1;
+const STORE_NAME = "store";
 
-export async function getDB() {
-  return openDB("planejamentosDB", 1, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains("categoriasReceita")) {
-        db.createObjectStore("categoriasReceita");
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
       }
-      if (!db.objectStoreNames.contains("categoriasDespesa")) {
-        db.createObjectStore("categoriasDespesa");
-      }
-      if (!db.objectStoreNames.contains("objetivos")) {
-        db.createObjectStore("objetivos");
-      }
-      if (!db.objectStoreNames.contains("lancamentos")) {
-        db.createObjectStore("lancamentos");
-      }
-      if (!db.objectStoreNames.contains("planejamentos")) {
-        db.createObjectStore("planejamentos");
-      }
-    },
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
   });
 }
 
-export async function salvar(store, dados) {
-  const db = await getDB();
-  await db.put(store, dados, "data");
+export async function salvar(chave, valor) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    tx.objectStore(STORE_NAME).put(valor, chave);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
 }
 
-export async function carregar(store, fallback = []) {
-  const db = await getDB();
-  const dados = await db.get(store, "data");
-  return dados || fallback;
+export async function carregar(chave, defaultValue) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const req = tx.objectStore(STORE_NAME).get(chave);
+    req.onsuccess = () => resolve(req.result ?? defaultValue);
+    req.onerror = () => reject(req.error);
+  });
 }
